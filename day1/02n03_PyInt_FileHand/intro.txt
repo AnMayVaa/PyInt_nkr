@@ -1,0 +1,5 @@
+Hello, welcome to Python programming!
+This is a file handling exercise.
+We will learn how to read and write files in Python.
+This is the fourth line of the file.
+And this is the fifth line.
