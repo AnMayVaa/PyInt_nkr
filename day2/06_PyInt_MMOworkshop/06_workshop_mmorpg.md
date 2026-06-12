@@ -36,9 +36,9 @@ damage = int(30 * multiplier)         # attack_power 30 สุ่ม ±20%
 print("damage:", damage)
 ```
 
-    2
+    6
     c
-    damage: 26
+    damage: 30
     
 
 
@@ -53,8 +53,8 @@ print(now)                                    # 2025-06-15 10:30:45.123456
 print(now.strftime("%Y-%m-%d %H:%M"))         # 2025-06-15 10:30
 ```
 
-    2026-06-12 14:03:33.636965
-    2026-06-12 14:03
+    2026-06-12 18:17:17.746965
+    2026-06-12 18:17
     
 
 ---
@@ -106,7 +106,6 @@ class Character:
             f"\n======================"
         )
 
-
 class Warrior(Character):
     def __init__(self, name):
         super().__init__(name, hp=150, attack_power=30, char_class="Warrior")
@@ -139,13 +138,12 @@ else:
 print(player)
 ```
 
-    Unknown class — defaulting to Warrior
     
     === CHARACTER CARD ===
     Name   : Pitak
-    Class  : Warrior
-    HP     : 150
-    Attack : 30
+    Class  : Mage
+    HP     : 80
+    Attack : 60
     ======================
     
 
@@ -187,14 +185,30 @@ def save_character(player):
         "attack_power": player.attack_power,
         "char_class":   player.char_class
     }
-    pass
+    with open("save.json", "w") as f:
+        json.dump(data, f)
+        print("Character saved!\n")
 
 
 def load_character():
     # TODO: โหลด save.json แล้วสร้าง Character object กลับมา
+    print("Loading save...")
     # ถ้าไม่มีไฟล์ให้ print แจ้งเตือน
-    pass
-
+    if not os.path.exists("save.json"):
+        print("No save file found.")
+        return None
+    with open("save.json", "r") as f:
+        data = json.load(f)
+        char_class = data["char_class"]
+        if char_class == "Warrior":
+            return Warrior(data["name"])
+        elif char_class == "Mage":
+            return Mage(data["name"])
+        elif char_class == "Archer":
+            return Archer(data["name"])
+        else:
+            print("Unknown character class in save file.")
+            return None
 
 # --- test ---
 save_character(player)
@@ -202,6 +216,18 @@ loaded = load_character()
 if loaded:
     print(loaded)
 ```
+
+    Character saved!
+    
+    Loading save...
+    
+    === CHARACTER CARD ===
+    Name   : Pitak
+    Class  : Mage
+    HP     : 80
+    Attack : 60
+    ======================
+    
 
 ---
 # ③ Inventory & Shop
@@ -235,7 +261,6 @@ Bought Health Potion!
 
 ```python
 # ③ Inventory & Shop
-
 class Item:
     def __init__(self, name, item_type, effect, price):
         self.name      = name
@@ -246,12 +271,124 @@ class Item:
     def __str__(self):
         return f"{self.name} ({self.item_type} +{self.effect})"
 
-
 # TODO: เพิ่ม gold และ inventory ให้ Character
+class Character:
+    def __init__(self, name, hp, attack_power, char_class):
+        self.name         = name
+        self.hp           = hp
+        self.attack_power = attack_power
+        self.char_class   = char_class
+        self.gold         = 100  # เริ่มต้นมีเงิน 100 gold
+        self.inventory    = []   # เริ่มต้นมีของใน inventory ว่าง
 # แล้วเขียน buy() method
+    def buy(self, item):
+        if self.gold >= item.price:
+            self.gold -= item.price
+            self.inventory.append(item)
+            print(f"Bought {item.name} for {item.price} gold. Remaining gold: {self.gold}")
+        else:
+            print(f"Not enough gold to buy {item.name}. You have {self.gold} gold.")
+
+class Warrior(Character):
+    def __init__(self, name):
+        super().__init__(name, hp=150, attack_power=30, char_class="Warrior")
+    
+class Mage(Character):
+    def __init__(self, name):
+        super().__init__(name, hp=80, attack_power=60, char_class="Mage")
+
+class Archer(Character):
+    def __init__(self, name):
+        super().__init__(name, hp=110, attack_power=45, char_class="Archer")
+
 # แล้วสร้างร้านค้าและทดสอบ
+class Shop:
+    def __init__(self):
+        self.items = [
+            Item("1. Small Potion", "heal", 20, 10),
+            Item("2. Large Potion", "heal", 50, 25),
+            Item("3. Iron Sword", "attack", 10, 30),
+            Item("4. Steel Sword", "attack", 20, 60)
+        ]
+
+    def display_items(self):
+        print("\n--- SHOP ITEMS ---")
+        for idx, item in enumerate(self.items, start=1):
+            print(f"{idx}. {item} - {item.price} gold")
+        print("------------------")
+
+#save and load
+def save_character(player):
+    # TODO: แปลง player เป็น dict แล้ว dump ลง save.json
+    data = {
+        "name":         player.name,
+        "hp":           player.hp,
+        "attack_power": player.attack_power,
+        "char_class":   player.char_class,
+        "gold":         player.gold,
+        "inventory":    [(item.name, item.item_type, item.effect, item.price) for item in player.inventory]
+    }
+    with open("save.json", "w") as f:
+        json.dump(data, f)
+        print("Character saved!\n")
+
+
+def load_character():
+    # TODO: โหลด save.json แล้วสร้าง Character object กลับมา
+    print("Loading save...")
+    # ถ้าไม่มีไฟล์ให้ print แจ้งเตือน
+    if not os.path.exists("save.json"):
+        print("No save file found.")
+        return None
+    with open("save.json", "r") as f:
+        data = json.load(f)
+        char_class = data["char_class"]
+        if char_class == "Warrior":
+            return Warrior(data["name"])
+        elif char_class == "Mage":
+            return Mage(data["name"])
+        elif char_class == "Archer":
+            return Archer(data["name"])
+        else:
+            print("Unknown character class in save file.")
+            return None
+
+# --- test shop ---
+player = Mage("Pitak")
+shop = Shop()
+shop.display_items()
+print(f"\nYour gold: {player.gold}")
+try:
+    choice = int(input("Enter the number of the item you want to buy: "))
+    if 1 <= choice <= len(shop.items):
+        selected_item = shop.items[choice - 1]
+        player.buy(selected_item)
+    else:
+        print("Invalid choice.")
+except ValueError:
+    print("Please enter a valid number.")
+finally:    
+    print(f"\nYour inventory: {[str(item) for item in player.inventory]}")
+
+save_character(player)
 
 ```
+
+    
+    --- SHOP ITEMS ---
+    1. 1. Small Potion (heal +20) - 10 gold
+    2. 2. Large Potion (heal +50) - 25 gold
+    3. 3. Iron Sword (attack +10) - 30 gold
+    4. 4. Steel Sword (attack +20) - 60 gold
+    ------------------
+    
+    Your gold: 100
+    Bought 1. Small Potion for 10 gold. Remaining gold: 90
+    
+    Your inventory: ['1. Small Potion (heal +20)']
+    Character saved!
+    
+    
 
 ---
 # ④ Monster Battle
@@ -288,6 +425,40 @@ Nakharin wins!
 # ④ Monster Battle
 import random
 
+# TODO: เพิ่ม is_alive()
+class Character:
+    def __init__(self, name, hp, attack_power, char_class):
+        self.name         = name
+        self.hp           = hp
+        self.attack_power = attack_power
+        self.char_class   = char_class
+
+    def is_alive(self):
+        return self.hp > 0
+    
+    def __str__(self):
+        return (
+            f"\n=== CHARACTER CARD ==="
+            f"\nName   : {self.name}"
+            f"\nClass  : {self.char_class}"
+            f"\nHP     : {self.hp}"
+            f"\nAttack : {self.attack_power}"
+            f"\n======================"
+        )
+
+class Warrior(Character):
+    def __init__(self, name):
+        super().__init__(name, hp=150, attack_power=30, char_class="Warrior")
+    
+class Mage(Character):
+    def __init__(self, name):
+        super().__init__(name, hp=80, attack_power=60, char_class="Mage")
+
+class Archer(Character):
+    def __init__(self, name):
+        super().__init__(name, hp=110, attack_power=45, char_class="Archer")
+
+# Monster class และ subclass
 class Monster:
     def __init__(self, name, hp, attack_power):
         self.name         = name
@@ -299,7 +470,6 @@ class Monster:
 
     def __str__(self):
         return f"{self.name} (HP: {self.hp})"
-
 
 class Goblin(Monster):
     def __init__(self):
@@ -316,17 +486,51 @@ class Dragon(Monster):
 
 def battle(player, monster):
     # TODO: เขียน battle loop
-    # แต่ละ round สุ่ม damage ±20% จาก attack_power
-    # แสดง log ทุก round
-    # จบเมื่อฝ่ายใดฝ่ายหนึ่ง hp <= 0
-    pass
+    round = 1
+    while player.is_alive() and monster.is_alive():
+        print(f"--- Round {round} ---")
+        # Player attacks monster
+        player_multiplier = random.uniform(0.8, 1.2) # แต่ละ round สุ่ม damage ±20% จาก attack_power
+        player_damage = int(player.attack_power * player_multiplier)
+        monster.hp -= player_damage
+        print(f"{player.name} attacks {monster.name} for {player_damage} damage! {monster}") # แสดง log ทุก round
 
+        if not monster.is_alive(): # จบเมื่อฝ่ายใดฝ่ายหนึ่ง hp <= 0
+            print(f"{monster.name} is defeated!") # แสดง log ทุก round
+            break
+
+        # Monster attacks player
+        monster_multiplier = random.uniform(0.8, 1.2) # แต่ละ round สุ่ม damage ±20% จาก attack_power
+        monster_damage = int(monster.attack_power * monster_multiplier)
+        player.hp -= monster_damage
+        print(f"{monster.name} attacks {player.name} for {monster_damage} damage! {player}") # แสดง log ทุก round
+
+        if not player.is_alive(): # จบเมื่อฝ่ายใดฝ่ายหนึ่ง hp <= 0
+            print(f"{player.name} is defeated!") # แสดง log ทุก round
+            break
+        
+        round += 1
 
 # --- test ---
+player = Mage("Pitak")
 monsters = [Goblin(), Orc(), Dragon()]
 enemy    = random.choice(monsters)
 battle(player, enemy)
 ```
+
+    --- Round 1 ---
+    Pitak attacks Orc for 52 damage! Orc (HP: 48)
+    Orc attacks Pitak for 27 damage! 
+    === CHARACTER CARD ===
+    Name   : Pitak
+    Class  : Mage
+    HP     : 53
+    Attack : 60
+    ======================
+    --- Round 2 ---
+    Pitak attacks Orc for 68 damage! Orc (HP: -20)
+    Orc is defeated!
+    
 
 ---
 # ⑤ Quest Log
@@ -359,17 +563,29 @@ from datetime import datetime
 def add_quest(quest_name):
     # TODO: บันทึก quest_name พร้อม timestamp ลง questlog.txt
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
-    pass
-
+    with open("questlog.txt", "a") as f:
+        f.write(f"{timestamp} - {quest_name}\n")
 
 def show_quests():
     # TODO: อ่าน questlog.txt แล้วแสดงผล
     # ถ้าไฟล์ไม่มีให้ print แจ้งเตือน
-    pass
-
+    try:
+        with open("questlog.txt", "r") as f:
+            quests = f.readlines()
+            if quests:
+                for quest in quests:
+                    print(quest.strip())
+            else:
+                print("No quests found.")
+    except FileNotFoundError:
+        print("Quest log file not found.")
 
 # --- test ---
 add_quest("Defeat the Goblin")
 add_quest("Find the lost sword")
 show_quests()
 ```
+
+    2026-06-12 18:25 - Defeat the Goblin
+    2026-06-12 18:25 - Find the lost sword
+    
